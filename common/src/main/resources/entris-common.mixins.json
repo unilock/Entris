@@ -6,7 +6,8 @@
   "client": [
   ],
   "mixins": [
-    "EnchantmentScreenMixin"
+    "EnchantmentScreenMixin",
+    "SlotMixin"
   ],
   "injectors": {
     "defaultRequire": 1
