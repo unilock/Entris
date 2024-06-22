@@ -2,10 +2,14 @@ package com.matthewperiut.entris.mixin;
 
 import com.matthewperiut.entris.Entris;
 import com.matthewperiut.entris.SlotEnabler;
+import com.matthewperiut.entris.client.ShowInventoryButton;
 import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.ingame.EnchantmentScreen;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
+import net.minecraft.client.gui.screen.option.CreditsAndAttributionScreen;
+import net.minecraft.client.gui.screen.option.OptionsScreen;
+import net.minecraft.client.gui.widget.PressableTextWidget;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.screen.EnchantmentScreenHandler;
 import net.minecraft.screen.slot.Slot;
@@ -25,10 +29,31 @@ import java.util.List;
 abstract public class EnchantmentScreenMixin extends HandledScreen<EnchantmentScreenHandler> {
     @Shadow protected abstract void drawBackground(DrawContext context, float delta, int mouseX, int mouseY);
 
+    private static final Text GO_BACK = Text.literal("Take Me Back!");
+
+    PressableTextWidget w;
+    ShowInventoryButton s;
+    boolean showInventory = false;
+
     @Inject(method = "init", at = @At("HEAD"))
     private void init(CallbackInfo ci) {
         setEntris(true);
         updateSlotDownStatus();
+
+        int x = (this.width - this.entrisBackgroundWidth) / 2;
+        int y = (this.height - this.entrisBackgroundHeight) / 2;
+        int i = this.textRenderer.getWidth(GO_BACK);
+        int j = this.width - i - 2;
+        w = this.addDrawableChild(new PressableTextWidget(x + 1, y - 10, i, 10, GO_BACK, (button) -> {
+            setEntris(false);
+            w.active = false;
+            w.visible = false;
+        }, this.textRenderer));
+
+        s = this.addDrawableChild(new ShowInventoryButton(x + 54, y + 46, (button -> {
+            showInventory = !showInventory;
+            w.active = true;
+        })));
     }
 
     public EnchantmentScreenMixin(EnchantmentScreenHandler handler, PlayerInventory inventory, Text title) {
@@ -39,7 +64,7 @@ abstract public class EnchantmentScreenMixin extends HandledScreen<EnchantmentSc
     private static final Identifier INVENTORY = Identifier.of(Entris.MOD_ID, "textures/gui/container/inventory.png");
 
     @Unique
-    protected int entrisBackgroundWidth = 177;
+    protected int entrisBackgroundWidth = 176;
     @Unique
     protected int entrisBackgroundHeight = 166;
 
@@ -49,7 +74,8 @@ abstract public class EnchantmentScreenMixin extends HandledScreen<EnchantmentSc
             int i = (this.width - this.entrisBackgroundWidth) / 2;
             int j = (this.height - this.entrisBackgroundHeight) / 2;
             context.drawTexture(ENTRIS, i, j, 0, 0, this.entrisBackgroundWidth, this.entrisBackgroundHeight);
-            context.drawTexture(INVENTORY, i, j, 0, 0, this.entrisBackgroundWidth, this.entrisBackgroundHeight);
+            if (showInventory)
+                context.drawTexture(INVENTORY, i, j, 0, 0, this.entrisBackgroundWidth, this.entrisBackgroundHeight);
             ci.cancel();
         }
     }
