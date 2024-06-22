@@ -2,6 +2,7 @@ package com.matthewperiut.entris.mixin;
 
 import com.matthewperiut.entris.Entris;
 import com.matthewperiut.entris.SlotEnabler;
+import com.matthewperiut.entris.TetrisGame;
 import com.matthewperiut.entris.client.ShowInventoryButton;
 import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.DrawContext;
@@ -15,6 +16,7 @@ import net.minecraft.screen.EnchantmentScreenHandler;
 import net.minecraft.screen.slot.Slot;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
+import org.lwjgl.glfw.GLFW;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
@@ -48,11 +50,15 @@ abstract public class EnchantmentScreenMixin extends HandledScreen<EnchantmentSc
             setEntris(false);
             w.active = false;
             w.visible = false;
+            s.visible = false;
+            s.active = false;
+            updateSlotDownStatus();
         }, this.textRenderer));
 
         s = this.addDrawableChild(new ShowInventoryButton(x + 54, y + 46, (button -> {
             showInventory = !showInventory;
-            w.active = true;
+            s.openChest = showInventory;
+            updateSlotDownStatus();
         })));
     }
 
@@ -74,15 +80,25 @@ abstract public class EnchantmentScreenMixin extends HandledScreen<EnchantmentSc
             int i = (this.width - this.entrisBackgroundWidth) / 2;
             int j = (this.height - this.entrisBackgroundHeight) / 2;
             context.drawTexture(ENTRIS, i, j, 0, 0, this.entrisBackgroundWidth, this.entrisBackgroundHeight);
+
+            int x = (this.width - this.entrisBackgroundWidth) / 2;
+            int y = (this.height - this.entrisBackgroundHeight) / 2;
+            tetrisGame.render(context, x + 92, y + 155);
+
             if (showInventory)
                 context.drawTexture(INVENTORY, i, j, 0, 0, this.entrisBackgroundWidth, this.entrisBackgroundHeight);
             ci.cancel();
         }
     }
 
-    @Inject(method = "render", at = @At("HEAD"), cancellable = true)
-    public void render(DrawContext context, int mouseX, int mouseY, float delta, CallbackInfo ci) {
+    @Unique
+    TetrisGame tetrisGame = new TetrisGame();
 
+    @Inject(method = "render", at = @At(value = "INVOKE", target = "Lnet/minecraft/screen/EnchantmentScreenHandler;getLapisCount()I"), cancellable = true)
+    public void render(DrawContext context, int mouseX, int mouseY, float delta, CallbackInfo ci) {
+        if (enableEntris) {
+            ci.cancel();
+        }
     }
 
     @Unique
@@ -97,16 +113,19 @@ abstract public class EnchantmentScreenMixin extends HandledScreen<EnchantmentSc
 
     @Unique
     private void updateSlotDownStatus() {
-        for (Slot slot : ((EnchantmentScreenHandler)this.handler).slots)
+
+        for (int i = 2; i < ((EnchantmentScreenHandler)this.handler).slots.size(); i++)
         {
-            if (slot.getIndex() < 2)
-                continue;
-            if (enableEntris)
-                if (!slotsDown)
-                    ((SlotEnabler) slot).setEnabled(false);
-            if (!enableEntris)
-                if (slotsDown)
+            Slot slot = ((EnchantmentScreenHandler) this.handler).slots.get(i);
+            if (enableEntris) {
+                if (showInventory) {
                     ((SlotEnabler) slot).setEnabled(true);
+                } else {
+                    ((SlotEnabler) slot).setEnabled(false);
+                }
+            } else {
+                ((SlotEnabler) slot).setEnabled(true);
+            }
         }
     }
 
@@ -120,19 +139,25 @@ abstract public class EnchantmentScreenMixin extends HandledScreen<EnchantmentSc
     protected void drawForeground(DrawContext context, int mouseX, int mouseY) {
         if (!enableEntris)
             super.drawForeground(context, mouseX, mouseY);
-        else
-            context.drawText(this.textRenderer, "Score", this.titleX, this.titleY, 4210752, false);
+        else {
+            context.drawText(this.textRenderer, "Entris", this.titleX, this.titleY, 4210752, false);
+            context.drawText(this.textRenderer, "Next Piece:", this.titleX, this.titleY + 10, 4210752, false);
+            context.drawText(this.textRenderer, "How much XP?", this.titleX, this.titleY + 60, 4210752, false);
+            if (!showInventory) {
+                context.drawText(this.textRenderer, "10 LVL = 1 min", this.titleX, this.titleY + 70, 4210752, false);
+                context.drawText(this.textRenderer, "MAX 30 LVL", this.titleX, this.titleY + 80, 4210752, false);
+
+            }
+        }
     }
 
-    // ---- //
-    // modifiy original
-    @Redirect(method = "render", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/screen/ingame/EnchantmentScreen;drawMouseoverTooltip(Lnet/minecraft/client/gui/DrawContext;II)V"))
-    public void disableTooltip(EnchantmentScreen instance, DrawContext drawContext, int x, int y) {
-
-    }
-
-    @Redirect(method = "render", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/DrawContext;drawTooltip(Lnet/minecraft/client/font/TextRenderer;Ljava/util/List;II)V"))
-    public void disableTooltip(DrawContext instance, TextRenderer textRenderer, List<Text> text, int x, int y) {
-
+    @Override
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (keyCode == GLFW.GLFW_KEY_RIGHT) {
+            // Code to execute when the right arrow key is pressed
+            System.out.println("Right arrow key was pressed!");
+            return true; // Return true to indicate the key was handled
+        }
+        return super.keyPressed(keyCode, scanCode, modifiers); // Handle other keys as usual
     }
 }
