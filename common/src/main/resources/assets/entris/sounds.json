@@ -1,0 +1,32 @@
+{
+  "move": {
+    "sounds": [
+      "entris:move"
+    ]
+  },
+  "hard_drop": {
+    "sounds": [
+      "entris:hard_drop"
+    ]
+  },
+  "finalize": {
+    "sounds": [
+      "entris:finalize"
+    ]
+  },
+  "rotate": {
+    "sounds": [
+      "entris:rotate"
+    ]
+  },
+  "swap": {
+    "sounds": [
+      "entris:swap"
+    ]
+  },
+  "tick": {
+    "sounds": [
+      "entris:tick"
+    ]
+  }
+}

@@ -11,8 +11,7 @@ import java.util.Queue;
 import java.util.Random;
 
 import static com.matthewperiut.entris.Entris.MOD_ID;
-import static org.lwjgl.glfw.GLFW.GLFW_PRESS;
-import static org.lwjgl.glfw.GLFW.glfwGetKey;
+import static org.lwjgl.glfw.GLFW.*;
 
 public class TetrisGame {
     public enum Tile {
@@ -59,6 +58,15 @@ public class TetrisGame {
         spawnNewTetromino();
     }
 
+    private int calculateDropPosition(Tetromino tetromino, int startX, int startY) {
+        int landingY = startY;
+        while (isValidPosition(tetromino, startX, landingY - 1)) {
+            landingY--;
+        }
+        return landingY;
+    }
+
+
     public void render(DrawContext context, int x, int y) {
         for (int i = 0; i < 10; i++) {
             for (int j = 0; j < 20; j++) {
@@ -69,11 +77,18 @@ public class TetrisGame {
             }
         }
 
+        // Render the current tetromino normally
         renderTetromino(context, currentTetromino, currentX, currentY, x, y);
+
+        // Calculate and render the hard drop position as transparent
+        int landingY = calculateDropPosition(currentTetromino, currentX, currentY);
+        renderTransparentTetromino(context, currentTetromino, currentX, landingY, x, y);
     }
 
     int buttonCooldown = 0;
     boolean flipper = false;
+    boolean leftRelease = true;
+    boolean rightRelease = true;
     public void continuousInput(long handle) {
         flipper = !flipper;
 
@@ -82,12 +97,23 @@ public class TetrisGame {
         } else {
             if (flipper) {
                 if (glfwGetKey(handle, GLFW.GLFW_KEY_LEFT) == GLFW_PRESS) {
-                    moveTetromino(-1, 0);
+                    leftRelease = false;
+                    if (moveTetromino(-1, 0))
+                        SoundHelper.moveSound();
                 }
                 if (glfwGetKey(handle, GLFW.GLFW_KEY_RIGHT) == GLFW_PRESS) {
-                    moveTetromino(1, 0);
+                    rightRelease = false;
+                    if (moveTetromino(1, 0))
+                        SoundHelper.moveSound();
                 }
             }
+        }
+
+        if (glfwGetKey(handle, GLFW.GLFW_KEY_LEFT) == GLFW_RELEASE) {
+            leftRelease = true;
+        }
+        if (glfwGetKey(handle, GLFW.GLFW_KEY_RIGHT) == GLFW_RELEASE) {
+            rightRelease = true;
         }
 
         if (glfwGetKey(handle, GLFW.GLFW_KEY_DOWN) == GLFW_PRESS) {
@@ -102,12 +128,20 @@ public class TetrisGame {
 
         switch (keyCode) {
             case GLFW.GLFW_KEY_LEFT:
-                moveTetromino(-1, 0);
-                buttonCooldown = 2;
+                if (leftRelease) {
+                    if (moveTetromino(-1, 0)) {
+                        SoundHelper.moveSound();
+                    }
+                    buttonCooldown = 2;
+                }
                 break;
             case GLFW.GLFW_KEY_RIGHT:
-                moveTetromino(1, 0);
-                buttonCooldown = 2;
+                if (rightRelease) {
+                    if (moveTetromino(1, 0)) {
+                        SoundHelper.moveSound();
+                    }
+                    buttonCooldown = 2;
+                }
                 break;
             case GLFW.GLFW_KEY_DOWN:
                 break;
@@ -137,10 +171,12 @@ public class TetrisGame {
         dropTimer++;
         if (dropTimer >= (isDropping ? 1 : 20)) {
             if (!moveTetromino(0, -1)) {
-                placeTetromino();
+                placeTetromino(false);
                 clearLines();
                 spawnNewTetromino();
                 holdUsed = false;
+            } else {
+                SoundHelper.tickSound();
             }
             dropTimer = 0;
         }
@@ -169,6 +205,7 @@ public class TetrisGame {
     }
 
     private boolean moveTetromino(int dx, int dy) {
+
         if (isValidPosition(currentTetromino, currentX + dx, currentY + dy)) {
             currentX += dx;
             currentY += dy;
@@ -177,22 +214,30 @@ public class TetrisGame {
         return false;
     }
 
-    private void rotateTetromino(int direction) {
+    public void rotateTetromino(int direction) {
+        // Create a new tetromino that represents the rotated state.
         Tetromino rotated = currentTetromino.rotate(direction);
-        for (int testIndex = 0; testIndex < 5; testIndex++) {
-            int[] kick = currentTetromino.getSrsKick(direction, testIndex);
-            if (isValidPosition(rotated, currentX + kick[0], currentY + kick[1])) {
-                currentX += kick[0];
-                currentY += kick[1];
-                currentTetromino = rotated;
-                return;
-            }
+
+        // Attempt to place the rotated tetromino in the current position.
+        if (isValidPosition(rotated, currentX, currentY)) {
+            currentTetromino = rotated;
+            return;
+        }
+
+        // If the rotated piece cannot be placed in the current position, try to "kick" it one block to the left or right.
+        int kick = direction > 0 ? 1 : -1; // Positive direction kicks right, negative direction kicks left.
+        if (isValidPosition(rotated, currentX + kick, currentY)) {
+            currentX += kick;
+            currentTetromino = rotated;
+            SoundHelper.rotateSound();
         }
     }
 
+
     private void hardDrop() {
         while (moveTetromino(0, -1));
-        placeTetromino();
+        placeTetromino(true);
+        SoundHelper.hardDropSound();
         clearLines();
         spawnNewTetromino();
         holdUsed = false;
@@ -211,10 +256,12 @@ public class TetrisGame {
             currentX = 4;
             currentY = 18;
         }
+
+        SoundHelper.swapSound();
         holdUsed = true;
     }
 
-    private void placeTetromino() {
+    private void placeTetromino(boolean soundHandled) {
         for (int y = 0; y < 4; y++) {
             for (int x = 0; x < 4; x++) {
                 if (currentTetromino.getTileAt(x, y) != Tile.NONE) {
@@ -225,6 +272,9 @@ public class TetrisGame {
                     }
                 }
             }
+        }
+        if (!soundHandled) {
+            SoundHelper.finalizeSound();
         }
     }
 
@@ -275,6 +325,21 @@ public class TetrisGame {
                     if (tileY >= 0 && tileY < 20 && tileX >= 0 && tileX < 10) {
                         int id = tetromino.getTileAt(i, j).ordinal();
                         context.drawGuiTexture(TILE_ID[id - 1], offsetX + (tileX * 8), offsetY - (tileY * 8), 8, 8);
+                    }
+                }
+            }
+        }
+    }
+
+    private void renderTransparentTetromino(DrawContext context, Tetromino tetromino, int x, int y, int offsetX, int offsetY) {
+        for (int j = 0; j < 4; j++) {
+            for (int i = 0; i < 4; i++) {
+                if (tetromino.getTileAt(i, j) != Tile.NONE) {
+                    int tileX = x + i;
+                    int tileY = y + j;
+                    if (tileY >= 0 && tileY < 20 && tileX >= 0 && tileX < 10) {
+                        int id = tetromino.getTileAt(i, j).ordinal();
+                        DrawContextUtility.drawTransparentGuiTexture(context, TILE_ID[id - 1], offsetX + (tileX * 8), offsetY - (tileY * 8), 8, 8, 0.3f);
                     }
                 }
             }

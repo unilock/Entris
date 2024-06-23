@@ -2,6 +2,7 @@ package com.matthewperiut.entris.mixin;
 
 import com.matthewperiut.entris.Entris;
 import com.matthewperiut.entris.SlotEnabler;
+import com.matthewperiut.entris.game.SoundHelper;
 import com.matthewperiut.entris.game.TetrisGame;
 import com.matthewperiut.entris.client.ShowInventoryButton;
 import net.fabricmc.loader.api.FabricLoader;
