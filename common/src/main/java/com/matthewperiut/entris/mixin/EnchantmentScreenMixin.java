@@ -2,30 +2,25 @@ package com.matthewperiut.entris.mixin;
 
 import com.matthewperiut.entris.Entris;
 import com.matthewperiut.entris.SlotEnabler;
-import com.matthewperiut.entris.TetrisGame;
+import com.matthewperiut.entris.game.TetrisGame;
 import com.matthewperiut.entris.client.ShowInventoryButton;
-import net.minecraft.client.font.TextRenderer;
+import net.fabricmc.loader.api.FabricLoader;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.ingame.EnchantmentScreen;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
-import net.minecraft.client.gui.screen.option.CreditsAndAttributionScreen;
-import net.minecraft.client.gui.screen.option.OptionsScreen;
 import net.minecraft.client.gui.widget.PressableTextWidget;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.screen.EnchantmentScreenHandler;
 import net.minecraft.screen.slot.Slot;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
-import org.lwjgl.glfw.GLFW;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-
-import java.util.List;
 
 @Mixin(EnchantmentScreen.class)
 abstract public class EnchantmentScreenMixin extends HandledScreen<EnchantmentScreenHandler> {
@@ -131,8 +126,21 @@ abstract public class EnchantmentScreenMixin extends HandledScreen<EnchantmentSc
 
     @Inject(method = "doTick", at = @At("HEAD"), cancellable = true)
     private void doTick(CallbackInfo ci) {
-        if (enableEntris)
+        if (enableEntris) {
+            if (handle == -1) {
+                regenerateHandle();
+            }
+
+            try {
+                tetrisGame.tick();
+                tetrisGame.continuousInput(handle);
+            } catch (Exception e) {
+                System.out.println(e.getMessage());
+                regenerateHandle();
+            }
+
             ci.cancel();
+        }
     }
 
     @Override
@@ -153,11 +161,19 @@ abstract public class EnchantmentScreenMixin extends HandledScreen<EnchantmentSc
 
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        if (keyCode == GLFW.GLFW_KEY_RIGHT) {
-            // Code to execute when the right arrow key is pressed
-            System.out.println("Right arrow key was pressed!");
-            return true; // Return true to indicate the key was handled
+        if(tetrisGame.input(keyCode, scanCode, modifiers)) {
+            return true;
         }
         return super.keyPressed(keyCode, scanCode, modifiers); // Handle other keys as usual
     }
+
+    private static long handle = -1;
+
+    @Unique
+    void regenerateHandle() {
+        MinecraftClient gameInstance = (MinecraftClient) (FabricLoader.getInstance().getGameInstance());
+        handle = gameInstance.getWindow().getHandle();
+    }
+
+
 }
