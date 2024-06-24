@@ -7,14 +7,12 @@ import com.matthewperiut.entris.game.TetrisGame;
 import com.matthewperiut.entris.network.ClientNetworkHelper;
 import com.matthewperiut.entris.network.payload.RequestEntrisEnchantsPayload;
 import com.matthewperiut.entris.network.payload.RequestStartEntrisPayload;
-import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.ingame.EnchantmentScreen;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import net.minecraft.client.gui.widget.PressableTextWidget;
 import net.minecraft.enchantment.Enchantment;
-import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
@@ -97,7 +95,7 @@ abstract public class EnchantmentScreenMixin extends HandledScreen<EnchantmentSc
 
             for (EnchantmentSelectButton e : enchantmentSelectButtons) {
                 if (e.number > 0) {
-                    enchantments.add(EnchantmentHelp.getEnchantmentIdStr(e.enchantment) + " " + e.number);
+                    enchantments.add(EnchantmentHelp.getEnchantmentIdStr(MinecraftClient.getInstance().world, e.enchantment) + " " + e.number);
                 }
             }
 
@@ -127,7 +125,7 @@ abstract public class EnchantmentScreenMixin extends HandledScreen<EnchantmentSc
 
         ItemStack itemStack = handler.slots.getFirst().getStack();
         if (itemStack != null) {
-            Enchantment[] enchantments = getPossibleEnchantments(itemStack);
+            Enchantment[] enchantments = getPossibleEnchantments(MinecraftClient.getInstance().world, itemStack);
 
             int ct = 0;
             for (Enchantment enchantment : enchantments) {
@@ -256,7 +254,6 @@ abstract public class EnchantmentScreenMixin extends HandledScreen<EnchantmentSc
                 tetrisGame.tick();
                 tetrisGame.continuousInput(handle);
             } catch (Exception e) {
-                System.out.println(e.getMessage());
                 regenerateHandle();
             }
 
@@ -348,7 +345,7 @@ abstract public class EnchantmentScreenMixin extends HandledScreen<EnchantmentSc
 
     @Unique
     void regenerateHandle() {
-        MinecraftClient gameInstance = (MinecraftClient) (FabricLoader.getInstance().getGameInstance());
+        MinecraftClient gameInstance = MinecraftClient.getInstance();
         handle = gameInstance.getWindow().getHandle();
     }
 

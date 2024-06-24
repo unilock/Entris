@@ -10,7 +10,6 @@ public class BookShelvesUtil {
         int ct = 0;
         Box box = Box.from(player.getPos());
         box = box.expand(8.f);
-        System.out.println(box);
         for (double x = box.minX; x < box.maxX; x++) {
             for (double y = box.minY; y < box.maxY; y++) {
                 for (double z = box.minZ; z < box.maxZ; z++) {
@@ -19,7 +18,6 @@ public class BookShelvesUtil {
                 }
             }
         }
-        System.out.println(ct);
         return ct;
     }
 }

@@ -1,6 +1,8 @@
 package com.matthewperiut.entris.fabric;
 
 import com.matthewperiut.entris.client.ClientEntrisInterface;
+import com.matthewperiut.entris.network.client.HandleAllowEntrisPayload;
+import com.matthewperiut.entris.network.client.HandleValidEntrisScorePayload;
 import com.matthewperiut.entris.network.payload.AllowEntrisPayload;
 import com.matthewperiut.entris.network.payload.RequestStartEntrisPayload;
 import com.matthewperiut.entris.network.payload.ValidEntrisScorePayload;
@@ -17,23 +19,13 @@ public class EntrisClientFabric implements ClientModInitializer {
     public void onInitializeClient() {
         ClientPlayNetworking.registerGlobalReceiver(AllowEntrisPayload.ID, (payload, context) -> {
             context.client().execute(() -> {
-                if (MinecraftClient.getInstance().currentScreen instanceof EnchantmentScreen enchantmentScreenHandler) {
-                    if (payload.allow())
-                        ((ClientEntrisInterface)enchantmentScreenHandler).beginGame();
-                    else
-                        ((ClientEntrisInterface)enchantmentScreenHandler).errorHandling();
-                }
+                HandleAllowEntrisPayload.handle(payload.allow());
             });
         });
 
         ClientPlayNetworking.registerGlobalReceiver(ValidEntrisScorePayload.ID, (payload, context) -> {
             context.client().execute(() -> {
-                if (MinecraftClient.getInstance().currentScreen instanceof EnchantmentScreen enchantmentScreenHandler) {
-                    if (payload.score() > 0)
-                        ((ClientEntrisInterface)enchantmentScreenHandler).validifyScore(payload.score());
-                    else
-                        ((ClientEntrisInterface)enchantmentScreenHandler).errorHandling();
-                }
+                HandleValidEntrisScorePayload.handle(payload.score());
             });
         });
     }

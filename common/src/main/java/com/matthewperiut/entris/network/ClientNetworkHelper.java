@@ -14,7 +14,7 @@ public class ClientNetworkHelper {
 
         // You cant send without a client player, so this is fine
         if (MinecraftClient.getInstance().getNetworkHandler() != null) {
-            MinecraftClient.getInstance().getNetworkHandler().sendPacket(new CustomPayloadC2SPacket(payload));
+            MinecraftClient.getInstance().getNetworkHandler().getConnection().send(new CustomPayloadC2SPacket(payload));
 
             return;
         }
