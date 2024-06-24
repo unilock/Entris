@@ -2,25 +2,27 @@ package com.matthewperiut.entris.mixin;
 
 import com.matthewperiut.entris.Entris;
 import com.matthewperiut.entris.client.*;
+import com.matthewperiut.entris.enchantment.EnchantmentHelp;
 import com.matthewperiut.entris.game.TetrisGame;
 import com.matthewperiut.entris.network.ClientNetworkHelper;
+import com.matthewperiut.entris.network.payload.RequestEntrisEnchantsPayload;
 import com.matthewperiut.entris.network.payload.RequestStartEntrisPayload;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.TitleScreen;
 import net.minecraft.client.gui.screen.ingame.EnchantmentScreen;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import net.minecraft.client.gui.widget.PressableTextWidget;
+import net.minecraft.enchantment.Enchantment;
 import net.minecraft.enchantment.EnchantmentHelper;
-import net.minecraft.enchantment.Enchantments;
-import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
+import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
 import net.minecraft.screen.EnchantmentScreenHandler;
 import net.minecraft.screen.slot.Slot;
+import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
-import net.minecraft.util.math.Box;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
@@ -31,6 +33,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import java.util.ArrayList;
 
 import static com.matthewperiut.entris.BookShelvesUtil.countBookShelves;
+import static com.matthewperiut.entris.enchantment.EnchantmentHelp.disallowedEnchanting;
+import static com.matthewperiut.entris.enchantment.EnchantmentHelp.getPossibleEnchantments;
 import static org.lwjgl.glfw.GLFW.GLFW_KEY_SPACE;
 
 @Mixin(EnchantmentScreen.class)
@@ -39,9 +43,10 @@ abstract public class EnchantmentScreenMixin extends HandledScreen<EnchantmentSc
 
     private static final Text GO_BACK = Text.literal("Take Me Back!");
 
-    PressableTextWidget w;
-    ShowInventoryButton s;
-    StartGameButton p;
+    PressableTextWidget RegularEnchantingButton;
+    ShowInventoryButton showInventoryButton;
+    StartGameButton startGameButton;
+    SubmitEnchantmentsButton submitEnchantmentButton;
 
     @Unique
     ArrayList<EnchantmentSelectButton> enchantmentSelectButtons = new ArrayList<>();
@@ -60,39 +65,92 @@ abstract public class EnchantmentScreenMixin extends HandledScreen<EnchantmentSc
         int y = (this.height - this.entrisBackgroundHeight) / 2;
         int i = this.textRenderer.getWidth(GO_BACK);
         int j = this.width - i - 2;
-        w = this.addDrawableChild(new PressableTextWidget(x + 1, y - 10, i, 10, GO_BACK, (button) -> {
+        RegularEnchantingButton = this.addDrawableChild(new PressableTextWidget(x + 1, y - 10, i, 10, GO_BACK, (button) -> {
             setEntris(false);
-            w.active = false;
-            w.visible = false;
-            s.visible = false;
-            s.active = false;
-            p.visible = false;
-            p.active = false;
+            RegularEnchantingButton.active = false;
+            RegularEnchantingButton.visible = false;
+            showInventoryButton.visible = false;
+            showInventoryButton.active = false;
+            startGameButton.visible = false;
+            startGameButton.active = false;
             updateSlotDownStatus();
             Entris.disableRegularEnchanting = false;
+            clearEnchantmentList();
         }, this.textRenderer));
 
-        s = this.addDrawableChild(new ShowInventoryButton(x + 54, y + 46, (button -> {
+        showInventoryButton = this.addDrawableChild(new ShowInventoryButton(x + 54, y + 46, (button -> {
             showInventory = !showInventory;
-            s.openChest = showInventory;
-            p.visible = !showInventory;
-            p.active = !showInventory;
+            showInventoryButton.openChest = showInventory;
+            startGameButton.visible = !showInventory;
+            startGameButton.active = !showInventory;
             updateSlotDownStatus();
-            /*
-            */
         })));
 
-        p = this.addDrawableChild(new StartGameButton(x + 15, y + 106, (button -> {
+        startGameButton = this.addDrawableChild(new StartGameButton(x + 15, y + 106, (button -> {
             ClientNetworkHelper.send(new RequestStartEntrisPayload(numberHolder.getNumber()));
+            clearEnchantmentList();
         })));
 
-        EnchantmentSelectButton b = this.addDrawableChild(new EnchantmentSelectButton(x + 55, y + 106, Enchantments.SHARPNESS.getValue(), (button -> {
+        submitEnchantmentButton = this.addDrawableChild(new SubmitEnchantmentsButton(x + 92, y + 150, (button -> {
+
+            ArrayList<String> enchantments = new ArrayList<>();
+
+            for (EnchantmentSelectButton e : enchantmentSelectButtons) {
+                if (e.number > 0) {
+                    enchantments.add(EnchantmentHelp.getEnchantmentIdStr(e.enchantment) + " " + e.number);
+                }
+            }
+
+            ClientNetworkHelper.send(new RequestEntrisEnchantsPayload(enchantments));
+
+            clearEnchantmentList();
+            MinecraftClient.getInstance().player.playSound(SoundEvents.BLOCK_ENCHANTMENT_TABLE_USE);
         })));
+        submitEnchantmentButton.visible = false;
+        submitEnchantmentButton.active = false;
 
-        enchantmentSelectButtons.add(b);
-
-        p.active = false;
+        startGameButton.active = false;
         Entris.disableRegularEnchanting = true;
+    }
+
+    public void clearEnchantmentList() {
+        for (EnchantmentSelectButton e : enchantmentSelectButtons) {
+            remove(e);
+        }
+        enchantmentSelectButtons.clear();
+        submitEnchantmentButton.visible = false;
+        submitEnchantmentButton.active = false;
+    }
+
+    public void refreshEnchantmentList() {
+        clearEnchantmentList();
+
+        ItemStack itemStack = handler.slots.getFirst().getStack();
+        if (itemStack != null) {
+            Enchantment[] enchantments = getPossibleEnchantments(itemStack);
+
+            int ct = 0;
+            for (Enchantment enchantment : enchantments) {
+
+                if (disallowedEnchanting(enchantment))
+                    continue;
+
+                EnchantmentSelectButton b = this.addDrawableChild(new EnchantmentSelectButton(x + 92, y + 3 + (12 * ct), enchantment, (button -> {
+                    if (tetrisGame.getScore() >= 1000) {
+                        if (((EnchantmentSelectButton)button).increment()) {
+                            tetrisGame.score -= 1000;
+                        }
+                    }
+                })));
+
+                enchantmentSelectButtons.add(b);
+
+                ct++;
+            }
+
+            submitEnchantmentButton.visible = !enchantmentSelectButtons.isEmpty();
+            submitEnchantmentButton.active = !enchantmentSelectButtons.isEmpty();
+        }
     }
 
     public void beginGame() {
@@ -105,6 +163,11 @@ abstract public class EnchantmentScreenMixin extends HandledScreen<EnchantmentSc
     }
     public void errorHandling() {
         close();
+    }
+
+    public void validifyScore(int score) {
+        tetrisGame.score = score;
+        refreshEnchantmentList();
     }
 
     public EnchantmentScreenMixin(EnchantmentScreenHandler handler, PlayerInventory inventory, Text title) {
@@ -220,7 +283,7 @@ abstract public class EnchantmentScreenMixin extends HandledScreen<EnchantmentSc
                 context.drawText(this.textRenderer, "    LVL = " + (int) Math.floor(numberHolder.getNumber()/ 10.f)  + ":" + String.format("%02d", seconds), this.titleX, this.titleY + 80, 0x404040, false);
                 int neededLapis = (int) Math.ceil(numberHolder.getNumber() / 10.f);
                 if (tetrisGame.isStarted && !tetrisGame.gameOver) {
-                    p.active = false;
+                    startGameButton.active = false;
                 } else {
                     if (!MinecraftClient.getInstance().player.isCreative()) {
                         if (MinecraftClient.getInstance().player.experienceLevel < numberHolder.getNumber() && !MinecraftClient.getInstance().player.isCreative() ) {
@@ -232,16 +295,25 @@ abstract public class EnchantmentScreenMixin extends HandledScreen<EnchantmentSc
                         else if (handler.getSlot(0).getStack().isEmpty()){
                             context.drawText(this.textRenderer, "NEED ITEM", this.titleX, this.titleY + 91, 0xFF5555, false);
                         }
+                        else if (handler.getSlot(0).getStack().hasEnchantments()){
+                            context.drawText(this.textRenderer, "HAS ENCHANT", this.titleX, this.titleY + 91, 0xFF5555, false);
+                        }
+                        else if (!handler.getSlot(0).getStack().isEnchantable()){
+                            context.drawText(this.textRenderer, "CANT ENCHANT", this.titleX, this.titleY + 91, 0xFF5555, false);
+                        }
+                        else if (handler.getSlot(0).getStack().getItem() == Items.BOOK){
+                            context.drawText(this.textRenderer, "NO BOOKS", this.titleX, this.titleY + 91, 0xFF5555, false);
+                        }
                         else if (handler.getLapisCount() < neededLapis) {
                             context.drawText(this.textRenderer, "NEEDS " + neededLapis + " LAPIS", this.titleX, this.titleY + 91, 0xFF5555, false);
                         } else {
                             if (numberHolder.getNumber() > 0)
-                                p.active = true;
+                                startGameButton.active = true;
                             else
-                                p.active = false;
+                                startGameButton.active = false;
                         }
                     } else {
-                        p.active = true;
+                        startGameButton.active = true;
                     }
                 }
 

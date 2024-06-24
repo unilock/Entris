@@ -48,7 +48,7 @@ public class TetrisGame {
     private boolean isDropping;
     private int dropTimer;
     private Queue<Tetromino.Shape> bag = new LinkedList<>();
-    private int score;
+    public int score = 10000;
     private int timeLeft;
     public boolean isStarted;
     private int countdown;
@@ -61,7 +61,7 @@ public class TetrisGame {
             }
         }
         fillBag();
-        score = 0;
+        score = 10000;
         timeLeft = 0;
         isStarted = false;
         countdown = 0;
@@ -395,7 +395,7 @@ public class TetrisGame {
         isStarted = true;
         timeLeft = seconds * 20; // Convert minutes to ticks (20 ticks per second)
         countdown = 0;
-        score = 0;
+        score = 10000;
         gameOver = false;
         spawnNewTetromino();
     }
@@ -409,6 +409,6 @@ public class TetrisGame {
     }
 
     public int getSeconds() {
-        return (timeLeft / (20)) - (getMinutes() * 60); // Convert ticks to minutes
+        return (timeLeft / (20)) - (getMinutes() * 60); // Convert ticks to seconds
     }
 }

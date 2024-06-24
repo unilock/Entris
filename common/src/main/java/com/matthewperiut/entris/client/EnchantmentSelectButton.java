@@ -1,22 +1,19 @@
 package com.matthewperiut.entris.client;
 
-import net.minecraft.client.MinecraftClient;
+import com.matthewperiut.entris.enchantment.EnchantmentHelp;
+import com.matthewperiut.entris.enchantment.RomanNumeralUtil;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.enchantment.Enchantment;
-import net.minecraft.enchantment.Enchantments;
-import net.minecraft.registry.Registries;
-import net.minecraft.registry.Registry;
-import net.minecraft.registry.RegistryKey;
-import net.minecraft.registry.RegistryKeys;
-import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
 
 public class EnchantmentSelectButton extends ButtonWidget {
-    public EnchantmentSelectButton(int x, int y, Identifier enchantment, PressAction onPress) {
-        super(x, y, 81, 12, MinecraftClient.getInstance().world.getRegistryManager().get(RegistryKeys.ENCHANTMENT).get(enchantment).description(), onPress, textSupplier -> getNarrationMessage(Text.literal("Start Game")));
+    public int number = 0;
+    public Enchantment enchantment;
 
+    public EnchantmentSelectButton(int x, int y, Enchantment enchantment, PressAction onPress) {
+        super(x, y, 81, 12, EnchantmentHelp.getEnchantmentText(enchantment), onPress, textSupplier -> getNarrationMessage(EnchantmentHelp.getEnchantmentText(enchantment)));
+        this.enchantment = enchantment;
     }
 
     @Override
@@ -27,5 +24,20 @@ public class EnchantmentSelectButton extends ButtonWidget {
     @Override
     public boolean isSelected() {
         return this.isHovered();
+    }
+
+    @Override
+    public void onPress() {
+        super.onPress();
+    }
+
+    public boolean increment() {
+        if (enchantment.getMaxLevel() > number) {
+            number++;
+            this.setMessage(Text.literal(EnchantmentHelp.getEnchantmentText(enchantment).getString() + " " + RomanNumeralUtil.toRoman(number)));
+            return true;
+        } else {
+            return false;
+        }
     }
 }
