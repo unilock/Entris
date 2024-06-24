@@ -16,6 +16,9 @@
   "entrypoints": {
     "main": [
       "com.matthewperiut.entris.fabric.EntrisFabric"
+    ],
+    "client": [
+      "com.matthewperiut.entris.fabric.EntrisClientFabric"
     ]
   },
   "mixins": [

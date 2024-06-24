@@ -1,7 +1,5 @@
 package com.matthewperiut.entris.game;
 
-import java.util.Random;
-
 import com.matthewperiut.entris.game.TetrisGame.Tile;
 
 public class Tetromino {
@@ -10,63 +8,66 @@ public class Tetromino {
     }
 
     private static final Tile[][][] SHAPES = {
-            { // I
+            // I
+            {
                     {Tile.NONE, Tile.NONE, Tile.NONE, Tile.NONE},
                     {Tile.LIGHT_BLUE, Tile.LIGHT_BLUE, Tile.LIGHT_BLUE, Tile.LIGHT_BLUE},
                     {Tile.NONE, Tile.NONE, Tile.NONE, Tile.NONE},
                     {Tile.NONE, Tile.NONE, Tile.NONE, Tile.NONE}
             },
-            { // O
+            // O
+            {
                     {Tile.NONE, Tile.NONE, Tile.NONE, Tile.NONE},
                     {Tile.NONE, Tile.YELLOW, Tile.YELLOW, Tile.NONE},
                     {Tile.NONE, Tile.YELLOW, Tile.YELLOW, Tile.NONE},
                     {Tile.NONE, Tile.NONE, Tile.NONE, Tile.NONE}
             },
-            { // T
-                    {Tile.NONE, Tile.NONE, Tile.NONE, Tile.NONE},
-                    {Tile.NONE, Tile.PURPLE, Tile.PURPLE, Tile.PURPLE},
-                    {Tile.NONE, Tile.NONE, Tile.PURPLE, Tile.NONE},
-                    {Tile.NONE, Tile.NONE, Tile.NONE, Tile.NONE}
+            // T
+            {
+                    {Tile.NONE, Tile.NONE, Tile.NONE},
+                    {Tile.PURPLE, Tile.PURPLE, Tile.PURPLE},
+                    {Tile.NONE, Tile.PURPLE, Tile.NONE}
             },
-            { // S
-                    {Tile.NONE, Tile.NONE, Tile.NONE, Tile.NONE},
-                    {Tile.NONE, Tile.GREEN, Tile.GREEN, Tile.NONE},
-                    {Tile.GREEN, Tile.GREEN, Tile.NONE, Tile.NONE},
-                    {Tile.NONE, Tile.NONE, Tile.NONE, Tile.NONE}
+            // S
+            {
+                    {Tile.NONE, Tile.NONE, Tile.NONE},
+                    {Tile.GREEN, Tile.GREEN, Tile.NONE},
+                    {Tile.NONE, Tile.GREEN, Tile.GREEN}
             },
-            { // Z
-                    {Tile.NONE, Tile.NONE, Tile.NONE, Tile.NONE},
-                    {Tile.RED, Tile.RED, Tile.NONE, Tile.NONE},
-                    {Tile.NONE, Tile.RED, Tile.RED, Tile.NONE},
-                    {Tile.NONE, Tile.NONE, Tile.NONE, Tile.NONE}
+            // Z
+            {
+                    {Tile.NONE, Tile.NONE, Tile.NONE},
+                    {Tile.NONE, Tile.RED, Tile.RED},
+                    {Tile.RED, Tile.RED, Tile.NONE}
             },
-            { // J
-                    {Tile.NONE, Tile.NONE, Tile.NONE, Tile.NONE},
-                    {Tile.BLUE, Tile.BLUE, Tile.BLUE, Tile.NONE},
-                    {Tile.NONE, Tile.NONE, Tile.BLUE, Tile.NONE},
-                    {Tile.NONE, Tile.NONE, Tile.NONE, Tile.NONE}
+            // J
+            {
+                    {Tile.NONE, Tile.NONE, Tile.NONE},
+                    {Tile.BLUE, Tile.BLUE, Tile.BLUE},
+                    {Tile.NONE, Tile.NONE, Tile.BLUE}
             },
-            { // L
-                    {Tile.NONE, Tile.NONE, Tile.NONE, Tile.NONE},
-                    {Tile.ORANGE, Tile.ORANGE, Tile.ORANGE, Tile.NONE},
-                    {Tile.ORANGE, Tile.NONE, Tile.NONE, Tile.NONE},
-                    {Tile.NONE, Tile.NONE, Tile.NONE, Tile.NONE}
+            // L
+            {
+                    {Tile.NONE, Tile.NONE, Tile.NONE},
+                    {Tile.ORANGE, Tile.ORANGE, Tile.ORANGE},
+                    {Tile.ORANGE, Tile.NONE, Tile.NONE}
             }
     };
 
-    // Super Rotation System (SRS) kick data
-    private static final int[][][] SRS_KICKS = {
-            { // Kicks for I piece
-                    { 0, 0 }, { -2, 0 }, { 1, 0 }, { -2, -1 }, { 1, 2 },
-                    { 0, 0 }, { -1, 0 }, { 2, 0 }, { -1, 2 }, { 2, -1 },
-                    { 0, 0 }, { 2, 0 }, { -1, 0 }, { 2, 1 }, { -1, -2 },
-                    { 0, 0 }, { 1, 0 }, { -2, 0 }, { 1, -2 }, { -2, 1 }
+    private static final int[][][] KICK_OFFSETS = {
+            // Offsets for I tetromino (kicks for 0->1, 1->2, 2->3, 3->0)
+            {
+                    {0, 0}, {-2, 0}, {1, 0}, {-2, -1}, {1, 2},
+                    {0, 0}, {-1, 0}, {2, 0}, {-1, 2}, {2, -1},
+                    {0, 0}, {2, 0}, {-1, 0}, {2, 1}, {-1, -2},
+                    {0, 0}, {1, 0}, {-2, 0}, {1, -2}, {-2, 1}
             },
-            { // Kicks for all other pieces
-                    { 0, 0 }, { -1, 0 }, { -1, 1 }, { 0, -2 }, { -1, -2 },
-                    { 0, 0 }, { 1, 0 }, { 1, 1 }, { 0, -2 }, { 1, -2 },
-                    { 0, 0 }, { 1, 0 }, { 1, -1 }, { 0, 2 }, { 1, 2 },
-                    { 0, 0 }, { -1, 0 }, { -1, -1 }, { 0, 2 }, { -1, 2 }
+            // Offsets for other tetrominos (J, L, S, Z, T) (kicks for 0->1, 1->2, 2->3, 3->0)
+            {
+                    {0, 0}, {-1, 0}, {-1, 1}, {0, -2}, {-1, -2},
+                    {0, 0}, {1, 0}, {1, -1}, {0, 2}, {1, 2},
+                    {0, 0}, {1, 0}, {1, 1}, {0, -2}, {1, -2},
+                    {0, 0}, {-1, 0}, {-1, -1}, {0, 2}, {-1, 2}
             }
     };
 
@@ -81,15 +82,11 @@ public class Tetromino {
     }
 
     public Tile getTile() {
-        return tiles[1][1]; // Assuming the center tile defines the color
+        return tiles[1][1];
     }
 
-    public int getX(int index) {
-        return index % 4;
-    }
-
-    public int getY(int index) {
-        return index / 4;
+    public Tile[][] getTiles() {
+        return tiles;
     }
 
     public void setTiles(Tile[][] tiles) {
@@ -97,37 +94,63 @@ public class Tetromino {
     }
 
     public Tetromino rotate(int direction) {
-        Tile[][] rotatedTiles = new Tile[4][4];
-        for (int y = 0; y < 4; y++) {
-            for (int x = 0; x < 4; x++) {
+        int size = tiles.length;
+        Tile[][] rotatedTiles = new Tile[size][size];
+        for (int y = 0; y < size; y++) {
+            for (int x = 0; x < size; x++) {
                 if (direction > 0) {
-                    rotatedTiles[x][3 - y] = tiles[y][x];
+                    rotatedTiles[y][x] = tiles[size - 1 - x][y]; // Clockwise rotation
                 } else {
-                    rotatedTiles[3 - x][y] = tiles[y][x];
+                    rotatedTiles[y][x] = tiles[x][size - 1 - y]; // Counter-clockwise rotation
                 }
             }
         }
-        Tetromino rotated = new Tetromino(shape);
-        rotated.setTiles(rotatedTiles);
-        rotated.rotationState = (rotationState + direction + 4) % 4;
-        return rotated;
+        return new Tetromino(this.shape, rotatedTiles, (this.rotationState + direction + 4) % 4);
     }
 
-    public int[] getSrsKick(int direction, int testIndex) {
-        int[][] kicks = shape == Shape.I ? SRS_KICKS[0] : SRS_KICKS[1];
-        int from = rotationState;
-        int to = (rotationState + direction + 4) % 4;
-        return new int[]{kicks[from * 5 + testIndex][0] - kicks[to * 5 + testIndex][0],
-                kicks[from * 5 + testIndex][1] - kicks[to * 5 + testIndex][1]};
-    }
-
-    public static Tetromino getRandom() {
-        Random random = new Random();
-        Shape shape = Shape.values()[random.nextInt(Shape.values().length)];
-        return new Tetromino(shape);
+    private Tetromino(Shape shape, Tile[][] tiles, int rotationState) {
+        this.shape = shape;
+        this.tiles = tiles;
+        this.rotationState = rotationState;
     }
 
     public Tile getTileAt(int x, int y) {
+        if (x < 0 || x >= tiles.length || y < 0 || y >= tiles[0].length) {
+            return Tile.NONE;
+        }
         return tiles[y][x];
+    }
+
+    public int getRotationState() {
+        return rotationState;
+    }
+
+    public Shape getShape() {
+        return shape;
+    }
+
+    public boolean isValidPosition(Tile[][] screen, int x, int y) {
+        for (int j = 0; j < tiles.length; j++) {
+            for (int i = 0; i < tiles[j].length; i++) {
+                if (tiles[j][i] != Tile.NONE) {
+                    int newX = x + i;
+                    int newY = y + j;
+                    if (newX < 0 || newX >= screen.length || newY < 0 || newY >= screen[0].length || screen[newX][newY] != Tile.NONE) {
+                        return false;
+                    }
+                }
+            }
+        }
+        return true;
+    }
+
+    public static int[][] getKickOffsets(Shape shape, int rotationState, int direction) {
+        if (shape == Shape.I) {
+            return KICK_OFFSETS[0];
+        } else if (shape != Shape.O) {
+            return KICK_OFFSETS[1];
+        } else {
+            return new int[][] {{0, 0}}; // No kick offsets for O tetromino
+        }
     }
 }
