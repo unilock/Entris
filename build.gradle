@@ -1,55 +1,78 @@
 plugins {
-    id "architectury-plugin" version "3.4-SNAPSHOT"
-    id "dev.architectury.loom" version "1.6-SNAPSHOT" apply false
+	id 'fabric-loom' version '1.7-SNAPSHOT'
+	id 'maven-publish'
 }
 
-architectury {
-    minecraft = rootProject.minecraft_version
+version = "${project.mod_version}+${project.minecraft_version}+fabric"
+group = project.maven_group
+
+base {
+	archivesName = project.archives_base_name
 }
 
-subprojects {
-    apply plugin: "dev.architectury.loom"
-
-    loom {
-        silentMojangMappingsLicense()
-    }
-
-    dependencies {
-        minecraft "com.mojang:minecraft:${rootProject.minecraft_version}"
-        mappings loom.layered {
-            it.mappings "net.fabricmc:yarn:${rootProject.yarn_mappings}:v2"
-            it.mappings("dev.architectury:yarn-mappings-patch-neoforge:1.21+build.4")
-        }
-    }
+repositories {
+	// Add repositories to retrieve artifacts from in here.
+	// You should only use this when depending on other mods because
+	// Loom adds the essential maven repositories to download Minecraft and libraries from automatically.
+	// See https://docs.gradle.org/current/userguide/declaring_repositories.html
+	// for more information about repositories.
 }
 
-allprojects {
-    apply plugin: "java"
-    apply plugin: "architectury-plugin"
-    apply plugin: "maven-publish"
+loom {
+	mods {
+		"entris" {
+			sourceSet("main")
+		}
+	}
+}
 
-    base {
-        archivesName = rootProject.archives_base_name
-    }
+dependencies {
+	minecraft "com.mojang:minecraft:${project.minecraft_version}"
+	mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
+	modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
 
-    version = rootProject.mod_version
-    group = rootProject.maven_group
+	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+}
 
-    repositories {
-        // Add repositories to retrieve artifacts from in here.
-        // You should only use this when depending on other mods because
-        // Loom adds the essential maven repositories to download Minecraft and libraries from automatically.
-        // See https://docs.gradle.org/current/userguide/declaring_repositories.html
-        // for more information about repositories.
-        maven { url "https://maven.neoforged.net/releases/" }
-    }
+processResources {
+	inputs.property "version", project.version
 
-    tasks.withType(JavaCompile) {
-        options.encoding = "UTF-8"
-        options.release = 21
-    }
+	filesMatching("fabric.mod.json") {
+		expand "version": project.version
+	}
+}
 
-    java {
-        withSourcesJar()
-    }
+tasks.withType(JavaCompile).configureEach {
+	it.options.encoding = "UTF-8"
+	it.options.release = 17
+}
+
+java {
+	withSourcesJar()
+
+	sourceCompatibility = JavaVersion.VERSION_17
+	targetCompatibility = JavaVersion.VERSION_17
+}
+
+jar {
+	from("LICENSE") {
+		rename { "${it}_${base.archivesName.get()}" }
+	}
+}
+
+// Configure the maven publication
+publishing {
+	publications {
+		create("mavenJava", MavenPublication) {
+			from components.java
+		}
+	}
+
+	// See https://docs.gradle.org/current/userguide/publishing_maven.html for information on how to set up publishing.
+	repositories {
+		// Add repositories to publish to here.
+		// Notice: This block does NOT have the same function as the block in the top level.
+		// The repositories here will be used for publishing your artifact, not for
+		// retrieving dependencies.
+	}
 }
