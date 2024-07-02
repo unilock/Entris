@@ -34,11 +34,11 @@ public class ShowInventoryButton extends ButtonWidget {
         context.setShaderColor(1.0F, 1.0F, 1.0F, this.alpha);
         RenderSystem.enableBlend();
         RenderSystem.enableDepthTest();
-        context.drawTexture(openChest ? CHEST_SLOT : CHEST_BUTTON, this.getX(), this.getY(), 0, 10, this.getWidth(), this.getHeight(), 18, 18);
+        context.drawTexture(openChest ? CHEST_SLOT : CHEST_BUTTON, this.getX(), this.getY(), 0, 0, this.getWidth(), this.getHeight(), 18, 18);
         if (hovered)
-            context.drawTexture(CHEST_HIGHLIGHT, this.getX(), this.getY(), 0, 10, this.getWidth(), this.getHeight(), 18, 18);
+            context.drawTexture(CHEST_HIGHLIGHT, this.getX(), this.getY(), 0, 0, this.getWidth(), this.getHeight(), 18, 18);
 
-        context.drawTexture(openChest ? CHEST_OPEN : CHEST, this.getX() + 1, this.getY() - 1, 0, 10, this.getWidth(), this.getHeight(), 16, 19);
+        context.drawTexture(openChest ? CHEST_OPEN : CHEST, this.getX() + 1, this.getY() - 1, 0, 0, 16, 19, 16, 19);
 
         context.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
     }

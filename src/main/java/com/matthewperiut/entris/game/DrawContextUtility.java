@@ -24,7 +24,7 @@ public class DrawContextUtility {
 
     public static void drawTransparentTexture(DrawContext context, Identifier texture, int x, int y, int width, int height, float alpha) {
         if (width != 0 && height != 0) {
-            drawTexturedQuad(context, texture, x, x + width, y, y + height, 0, 0.0f / width, (0.0f + width) / width, 10.0f / height, (10.0f + height) / height, 1f, 1f, 1f, alpha);
+            drawTexturedQuad(context, texture, x, x + width, y, y + height, 0, 0f, 1f, 0f, 1f, 1f, 1f, 1f, alpha);
         }
     }
 }

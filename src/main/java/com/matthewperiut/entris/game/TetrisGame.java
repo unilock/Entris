@@ -84,7 +84,7 @@ public class TetrisGame {
             for (int j = 0; j < 20; j++) {
                 int id = screen[i][j].ordinal();
                 if (id > 0) {
-                    context.drawTexture(TILE_ID[id - 1], x + (i * 8), y - (j * 8), 0, 10, 8, 8, 8, 8);
+                    context.drawTexture(TILE_ID[id - 1], x + (i * 8), y - (j * 8), 0, 0, 8, 8, 8, 8);
                 }
             }
         }
@@ -369,7 +369,7 @@ public class TetrisGame {
                     int tileY = y + j;
                     if (tileY >= 0 && tileY < 20 && tileX >= 0 && tileX < 10) {
                         int id = tetromino.getTileAt(i, j).ordinal();
-                        context.drawTexture(TILE_ID[id - 1], offsetX + (tileX * 8), offsetY - (tileY * 8), 0, 10, 8, 8, 8, 8);
+                        context.drawTexture(TILE_ID[id - 1], offsetX + (tileX * 8), offsetY - (tileY * 8), 0, 0, 8, 8, 8, 8);
                     }
                 }
             }
